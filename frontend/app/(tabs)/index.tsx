@@ -1,4 +1,3 @@
-import "./global.css"
 import {FlatList, Pressable, SafeAreaView, Text, View, Image, TouchableOpacity, ScrollView} from "react-native";
 import {images, offers} from "@/constants";
 import {Fragment} from "react";
