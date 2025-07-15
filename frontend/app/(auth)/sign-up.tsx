@@ -35,7 +35,7 @@ const SignUp = () => {
                 placeholder="Enter Your Full Name"
                 value={form.password}
                 onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
-                label={"Email"}
+                label={"Name"}
             />
             <CustomInput
                 placeholder="Enter Your Email"
