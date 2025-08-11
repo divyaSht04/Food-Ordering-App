@@ -1,5 +1,6 @@
 package food.ordering.backend.configuration;
 
+import food.ordering.backend.services.AuthServiceImpl;
 import food.ordering.backend.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -25,6 +26,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserDetailsService userDetailsService;
 
+    private final AuthServiceImpl authService;
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -34,6 +37,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (jwt != null) {
             try {
+                if (authService.isTokenBlacklisted(jwt)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Token has been invalidated");
+                    return;
+                }
+
                 String email = jwtUtil.extractEmail(jwt);
 
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -41,7 +50,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     if (jwtUtil.validateToken(jwt, userDetails)) {
                         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                     }
