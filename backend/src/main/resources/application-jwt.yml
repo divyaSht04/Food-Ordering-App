@@ -1,0 +1,4 @@
+jwt:
+  secret: TXlTZWNyZXRLZXlGb3JKV1RUb2tlbkdlbmVyYXRpb25UaGF0SXNMb25nRW5vdWdoQW5kU2VjdXJl
+  accessTokenExpirationMs: 3600000
+  refreshTokenExpirationMs: 604800000
