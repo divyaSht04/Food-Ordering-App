@@ -27,9 +27,6 @@ public class JwtUtil {
     @Value("${jwt.accessTokenExpirationMs}")
     private long accessTokenExpirationMs;
 
-    @Value("${jwt.secret}")
-    private long refreshTokenExpirationMs;
-
     public String generateAccessToken(String email) {
         try {
             Map<String, Object> claims = new HashMap<>();

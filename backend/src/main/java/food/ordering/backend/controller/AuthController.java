@@ -1,10 +1,18 @@
 package food.ordering.backend.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import food.ordering.backend.dto.authDTOs.AuthRequest;
 import food.ordering.backend.dto.authDTOs.AuthResponse;
 import food.ordering.backend.dto.authDTOs.LogoutResponse;
-import food.ordering.backend.dto.authDTOs.RegisterRequest;
 import food.ordering.backend.dto.authDTOs.RefreshTokenRequest;
+import food.ordering.backend.dto.authDTOs.RegisterRequest;
 import food.ordering.backend.services.interfaces.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,16 +21,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Authentication API for user registration, login, and logout")
+@Tag(   name = "Authentication",
+        description = "Authentication API for user registration, login, and logout"
+)
 public class AuthController {
-
+    
     private final AuthService authService;
 
     @PostMapping("/register")
@@ -57,13 +64,13 @@ public class AuthController {
     })
     public ResponseEntity<LogoutResponse> logout(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
-
+        
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             LogoutResponse response = authService.logout(token);
             return ResponseEntity.ok(response);
         }
-
+        
         LogoutResponse errorResponse = LogoutResponse.builder()
                 .message("No valid token provided")
                 .success(false)
@@ -80,5 +87,29 @@ public class AuthController {
     public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
         AuthResponse response = authService.refreshToken(refreshTokenRequest.getRefreshToken());
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/test")
+    @Operation(summary = "Test API connectivity", description = "Simple endpoint to test if the backend is reachable from mobile devices")
+    @ApiResponse(responseCode = "200", description = "Connection successful")
+    public ResponseEntity<String> testConnection(HttpServletRequest request) {
+        String clientIp = getClientIpAddress(request);
+        String message = String.format("Backend connection successful! Request from: %s", clientIp);
+        return ResponseEntity.ok(message);
+    }
+
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xRealIp = request.getHeader("X-Real-IP");
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+        
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        
+        return request.getRemoteAddr();
     }
 }

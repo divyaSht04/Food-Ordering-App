@@ -1,59 +1,58 @@
-import {View, Text, Button, Alert, SafeAreaView} from 'react-native'
-import {Link, router} from "expo-router";
-import React, {useState} from "react";
+import { View, Text, Alert } from 'react-native';
+import { Link, router } from "expo-router";
+import React from "react";
 import CustomInput from "@/component/CustomInput";
 import CustomButton from "@/component/CustomButton";
+import { useAuthForms } from "@/hooks/useAuthForms";
 
 const SignUp = () => {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [form, setForm] = useState({
-        name: "",
-        email: "",
-        password: "",
-    })
+    const {
+        registerForm,
+        updateRegisterField,
+        handleRegister,
+        isRegisterLoading,
+    } = useAuthForms();
 
-    const submit = async () =>{
-        if(!form.email || !form.password) Alert.alert("Please enter a valid email");
-
-        setIsSubmitting(true);
-
-        try{
-            // Sign Up logic
-
-            Alert.alert("Sign Up Successfully!");
-            router.replace("/")
-        }catch (error:any){
-            Alert.alert(error.message)
-        }finally {
-            setIsSubmitting(false);
+    const submit = async () => {
+        const success = await handleRegister();
+        if (success) {
+            Alert.alert("Success", "Account created successfully!");
+            router.replace("/");
         }
-    }
+    };
 
     return (
         <View className="gap-10 bg-white rounded-lg p-5 mt-5">
             <CustomInput
                 placeholder="Enter Your Full Name"
-                value={form.password}
-                onChangeText={(text) => setForm((prev) => ({ ...prev, name: text }))}
-                label={"Name"}
+                value={registerForm.fullName}
+                onChangeText={(text) => updateRegisterField('fullName', text)}
+                label={"Full Name"}
             />
             <CustomInput
                 placeholder="Enter Your Email"
-                value={form.email}
-                onChangeText={(text) => setForm((prev) => ({ ...prev, email: text }))}
+                value={registerForm.email}
+                onChangeText={(text) => updateRegisterField('email', text)}
                 label={"Email"}
                 keyboardType={"email-address"}
             />
             <CustomInput
+                placeholder="Enter Your Phone Number"
+                value={registerForm.phoneNumber}
+                onChangeText={(text) => updateRegisterField('phoneNumber', text)}
+                label={"Phone Number"}
+                keyboardType={"phone-pad"}
+            />
+            <CustomInput
                 placeholder="Enter Your Password"
-                value={form.password}
-                onChangeText={(text) => setForm((prev) => ({ ...prev, password: text }))}
-                label={"Email"}
+                value={registerForm.password}
+                onChangeText={(text) => updateRegisterField('password', text)}
+                label={"Password"}
                 secureTextEntry={true}
             />
             <CustomButton
                 title="Sign Up"
-                isLoading={isSubmitting}
+                isLoading={isRegisterLoading}
                 onPress={submit}
             />
 

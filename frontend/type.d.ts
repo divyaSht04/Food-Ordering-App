@@ -15,3 +15,6 @@ interface CustomButtonProps {
     textStyle?: string;
     isLoading?: boolean;
 }
+
+// Auth Interfaces
+
