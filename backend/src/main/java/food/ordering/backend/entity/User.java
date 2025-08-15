@@ -18,13 +18,15 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     private String fullName;
 
-    private  String email;
+    private String email;
 
     private String password;
+
+    private String phoneNumber;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id")

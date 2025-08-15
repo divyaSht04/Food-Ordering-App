@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +56,8 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RuntimeException("Default role CUSTOMER not found"));
 
         User newUser = new User();
+        newUser.setId(UUID.randomUUID().toString());
+        newUser.setPhoneNumber(registerRequest.getNumber());
         newUser.setFullName(registerRequest.getFirstName() + " " + registerRequest.getLastName());
         newUser.setEmail(registerRequest.getEmail());
         newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
