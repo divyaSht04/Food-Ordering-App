@@ -1,8 +1,8 @@
-import {FlatList, Pressable, SafeAreaView, Text, View, Image, TouchableOpacity, ScrollView} from "react-native";
+import {Button, FlatList, Pressable, SafeAreaView, Text, View, Image, TouchableOpacity, ScrollView} from "react-native";
 import {images, offers} from "@/constants";
 import {Fragment} from "react";
 import cn from "clsx";
-import CartButton from "@/component/CartButton";
+import CartButton from "@/component/CartButton";;
 
 export default function Index() {
     return (
@@ -50,6 +50,12 @@ export default function Index() {
 
                             <CartButton />
                         </View>
+                    )}
+                    ListFooterComponent={() =>(
+                        <Button
+                            title="Show More"
+                            onPress={() => {}}
+                        />
                     )}
                 />
         </SafeAreaView>

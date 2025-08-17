@@ -32,7 +32,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (authenticated) {
         const email = await AuthService.getUserEmail();
         if (email) {
-          // Create a minimal user object from stored data
           setUser({
             email,
             fullName: '',
