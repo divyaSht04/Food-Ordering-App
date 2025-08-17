@@ -16,5 +16,9 @@ interface CustomButtonProps {
     isLoading?: boolean;
 }
 
-// Auth Interfaces
+interface TabBarIconProps {
+    focused: boolean;
+    icon: ImageSourcePropType;
+    title: string;
+};
 
