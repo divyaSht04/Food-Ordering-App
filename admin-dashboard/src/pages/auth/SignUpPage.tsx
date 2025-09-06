@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, User, Phone, Eye, EyeOff, ArrowLeft, ChefHat } from 'lucide-react';
+import { Mail, Lock, User, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 import CustomInput from '../../components/ui/CustomInput';
 import CustomButton from '../../components/ui/CustomButton';
+import { images, icons } from '../../../constants';
 
 const signUpSchema = z.object({
   fullName: z
@@ -72,43 +73,52 @@ const SignUpPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-10 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-        <div className="absolute top-10 right-10 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
-      </div>
-
-      {/* Back button */}
-      <div className="relative z-10 p-6">
-        <Link 
-          to="/" 
-          className="inline-flex items-center text-white hover:text-gray-300 transition-colors duration-200"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Back to Home
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <header className="bg-white shadow-soft">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <Link 
+              to="/" 
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              <span className="font-quicksand-medium">Back to Home</span>
+            </Link>
+            <div className="flex items-center space-x-3">
+              <img 
+                src={images.logo} 
+                alt="Logo" 
+                className="w-8 h-8 object-contain"
+              />
+              <h1 className="text-xl font-quicksand-bold text-gray-900">Dashboard</h1>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* Main content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <ChefHat className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <img 
+                src={icons.user} 
+                alt="Admin" 
+                className="w-8 h-8"
+              />
             </div>
-            <h1 className="text-4xl font-bold text-white mb-2">
+            <h1 className="text-4xl font-quicksand-bold text-gray-900 mb-2">
               Create Account
             </h1>
-            <p className="text-gray-300 text-lg">
+            <p className="text-gray-600 text-lg font-quicksand-regular">
               Join the admin team
             </p>
           </div>
 
           {/* Form */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-8 shadow-2xl">
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-medium">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <CustomInput
@@ -117,7 +127,7 @@ const SignUpPage: React.FC = () => {
                   placeholder="Enter your full name"
                   leftIcon={<User className="w-5 h-5 text-gray-400" />}
                   error={errors.fullName?.message}
-                  className="bg-white/10 border-white/20 text-white placeholder-gray-400 focus:border-orange-500"
+                  className="bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500 focus:border-primary-500 font-quicksand-regular"
                   {...register('fullName')}
                 />
               </div>
@@ -129,7 +139,7 @@ const SignUpPage: React.FC = () => {
                   placeholder="Enter your email"
                   leftIcon={<Mail className="w-5 h-5 text-gray-400" />}
                   error={errors.email?.message}
-                  className="bg-white/10 border-white/20 text-white placeholder-gray-400 focus:border-orange-500"
+                  className="bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500 focus:border-primary-500 font-quicksand-regular"
                   {...register('email')}
                 />
               </div>
@@ -141,7 +151,7 @@ const SignUpPage: React.FC = () => {
                   placeholder="Enter your phone number"
                   leftIcon={<Phone className="w-5 h-5 text-gray-400" />}
                   error={errors.phone?.message}
-                  className="bg-white/10 border-white/20 text-white placeholder-gray-400 focus:border-orange-500"
+                  className="bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500 focus:border-primary-500 font-quicksand-regular"
                   {...register('phone')}
                 />
               </div>
@@ -156,7 +166,7 @@ const SignUpPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-white transition-colors duration-200"
+                      className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
                     >
                       {showPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -166,7 +176,7 @@ const SignUpPage: React.FC = () => {
                     </button>
                   }
                   error={errors.password?.message}
-                  className="bg-white/10 border-white/20 text-white placeholder-gray-400 focus:border-orange-500"
+                  className="bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500 focus:border-primary-500 font-quicksand-regular"
                   {...register('password')}
                 />
               </div>
@@ -181,7 +191,7 @@ const SignUpPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="text-gray-400 hover:text-white transition-colors duration-200"
+                      className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -191,7 +201,7 @@ const SignUpPage: React.FC = () => {
                     </button>
                   }
                   error={errors.confirmPassword?.message}
-                  className="bg-white/10 border-white/20 text-white placeholder-gray-400 focus:border-orange-500"
+                  className="bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-500 focus:border-primary-500 font-quicksand-regular"
                   {...register('confirmPassword')}
                 />
               </div>
@@ -202,15 +212,15 @@ const SignUpPage: React.FC = () => {
                   name="terms"
                   type="checkbox"
                   required
-                  className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-600 bg-gray-700 rounded"
+                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
-                <label htmlFor="terms" className="ml-2 text-sm text-gray-300">
+                <label htmlFor="terms" className="ml-2 text-sm text-gray-700 font-quicksand-regular">
                   I agree to the{' '}
-                  <Link to="/terms" className="text-orange-400 hover:text-orange-300 font-medium">
+                  <Link to="/terms" className="text-primary-600 hover:text-primary-500 font-quicksand-medium">
                     Terms of Service
                   </Link>{' '}
                   and{' '}
-                  <Link to="/privacy" className="text-orange-400 hover:text-orange-300 font-medium">
+                  <Link to="/privacy" className="text-primary-600 hover:text-primary-500 font-quicksand-medium">
                     Privacy Policy
                   </Link>
                 </label>
@@ -223,18 +233,18 @@ const SignUpPage: React.FC = () => {
                 fullWidth
                 isLoading={isLoading}
                 loadingText="Creating account..."
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold py-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                className="bg-primary-500 hover:bg-primary-600 text-white font-quicksand-semibold py-4 rounded-xl shadow-soft hover:shadow-medium transition-all duration-200"
               >
                 Create Admin Account
               </CustomButton>
             </form>
 
             <div className="mt-8 text-center">
-              <p className="text-gray-300">
+              <p className="text-gray-600 font-quicksand-regular">
                 Already have an account?{' '}
                 <Link
                   to="/signin"
-                  className="text-orange-400 hover:text-orange-300 font-medium transition-colors duration-200"
+                  className="text-primary-600 hover:text-primary-500 font-quicksand-medium transition-colors duration-200"
                 >
                   Sign in here
                 </Link>
@@ -244,7 +254,7 @@ const SignUpPage: React.FC = () => {
 
           {/* Security notice */}
           <div className="mt-6 text-center">
-            <p className="text-gray-400 text-sm">
+            <p className="text-gray-500 text-sm font-quicksand-regular">
               🔒 Your data is protected with industry-standard encryption
             </p>
           </div>

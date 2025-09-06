@@ -65,7 +65,7 @@ src/
 │   ├── auth/
 │   │   ├── SignInPage.tsx      # Sign-in page with validation
 │   │   └── SignUpPage.tsx      # Sign-up page with validation
-│   └── DemoPage.tsx            # Landing page with auth options
+│   └── HomePage.tsx            # Landing page with auth options
 ├── types/
 │   └── index.ts                # TypeScript type definitions
 ├── App.tsx                     # Main app component with routing

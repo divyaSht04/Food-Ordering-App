@@ -89,19 +89,25 @@ public class DataInitializer implements CommandLineRunner {
     private void initializeDefaultAdminUser() {
         log.info("Initializing default admin user...");
         
-        String adminEmail = "admin@fooddelivery.com";
-        
+        String adminEmail = System.getenv("SYSTEM_ADMIN");
+        String adminPassword = System.getenv("SYSTEM_ADMIN_PASSWORD");
+
+        if (adminEmail == null || adminEmail.trim().isEmpty() || adminPassword == null || adminPassword.trim().isEmpty()) {
+            log.error("SYSTEM_ADMIN and/or SYSTEM_ADMIN_PASSWORD environment variables are not set. Skipping default admin user creation.");
+            return;
+        }
+
         if (!userRepository.findByEmail(adminEmail).isPresent()) {
             User adminUser = new User();
             adminUser.setFullName("System Administrator");
             adminUser.setEmail(adminEmail);
-            adminUser.setPassword(passwordEncoder.encode("admin123")); // Change this password in production!
+            adminUser.setPassword(passwordEncoder.encode(adminPassword));
 
             roleRepository.findByName(Roles.RoleType.SUPERADMIN)
                 .ifPresent(adminUser::setRole);
-            
+
             userRepository.save(adminUser);
-            log.info("Created default admin user: {} (Password: admin123)", adminEmail);
+            log.info("Created default admin user: {}", adminEmail);
             log.warn("IMPORTANT: Change the default admin password in production!");
         } else {
             log.debug("Default admin user already exists: {}", adminEmail);

@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import SignInPage from './pages/auth/SignInPage';
 import SignUpPage from './pages/auth/SignUpPage';
-import DemoPage from './pages/DemoPage';
+import HomePage from './pages/HomePage';
 import './index.css';
 
 const App: React.FC = () => {
@@ -10,8 +10,8 @@ const App: React.FC = () => {
     <Router>
       <div className="App">
         <Routes>
-          {/* Demo Page */}
-          <Route path="/" element={<DemoPage />} />
+          {/* Home Page */}
+          <Route path="/" element={<HomePage />} />
           
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
