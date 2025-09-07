@@ -2,6 +2,7 @@ package food.ordering.backend.entity;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,7 +15,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,8 +28,7 @@ import lombok.NoArgsConstructor;
 public class Roles {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "roles_seq")
-    @SequenceGenerator(name = "roles_seq", sequenceName = "roles_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Enumerated(EnumType.STRING)
