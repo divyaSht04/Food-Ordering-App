@@ -61,19 +61,22 @@ public class OtpService {
         }
         
         OtpVerification otp = otpOpt.get();
-
+        
+        // Check if OTP is expired
         if (LocalDateTime.now().isAfter(otp.getExpiresAt())) {
             log.warn("OTP expired for email: {}", email);
             otpRepository.delete(otp);
             return false;
         }
-
+        
+        // Check attempts
         if (otp.getAttempts() >= MAX_ATTEMPTS) {
             log.warn("Maximum OTP attempts exceeded for email: {}", email);
             otpRepository.delete(otp);
             return false;
         }
-
+        
+        // Increment attempts
         otp.setAttempts(otp.getAttempts() + 1);
         
         // Check OTP code

@@ -67,6 +67,7 @@ public class AuthServiceImpl implements AuthService {
         pendingUserRepository.save(pendingUser);
         log.info("Pending user created for email: {}", registerRequest.getEmail());
 
+        // Generate and send OTP
         String fullName = registerRequest.getFirstName() + " " + registerRequest.getLastName();
         otpService.generateAndSendOtp(registerRequest.getEmail(), fullName);
 
@@ -90,6 +91,7 @@ public class AuthServiceImpl implements AuthService {
 
         PendingUser pendingUser = pendingUserOpt.get();
 
+        // Verify OTP
         String fullName = pendingUser.getFirstName() + " " + pendingUser.getLastName();
         boolean isOtpValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode(), fullName);
         
