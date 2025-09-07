@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import food.ordering.backend.entity.Permission;
 
 @Repository
-public interface PermissionRepository extends JpaRepository<Permission, Long> {
+public interface PermissionRepository extends JpaRepository<Permission, String> {
     Optional<Permission> findByName(String name);
     boolean existsByName(String name);
 }

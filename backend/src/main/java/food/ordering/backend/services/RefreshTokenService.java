@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.chrono.ChronoLocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,7 +33,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(refreshTokenDurationMs))
+                .expiryDate(LocalDateTime.from(Instant.now().plusMillis(refreshTokenDurationMs)))
                 .revoked(false)
                 .build();
 
@@ -45,7 +47,7 @@ public class RefreshTokenService {
     }
 
     public RefreshToken verifyExpiration(RefreshToken token) {
-        if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
+        if (token.getExpiryDate().compareTo(ChronoLocalDateTime.from(Instant.now())) < 0) {
             refreshTokenRepository.delete(token);
             log.warn("Refresh token expired and deleted: {}", token.getToken());
             throw new JwtTokenException("Refresh token has expired. Please sign in again.");
@@ -85,7 +87,7 @@ public class RefreshTokenService {
         RefreshToken newToken = RefreshToken.builder()
                 .user(oldToken.getUser())
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(refreshTokenDurationMs))
+                .expiryDate(LocalDateTime.from(Instant.now().plusMillis(refreshTokenDurationMs)))
                 .revoked(false)
                 .build();
 

@@ -17,7 +17,6 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
     private String fullName;
@@ -32,4 +31,10 @@ public class User {
     @JoinColumn(name = "role_id")
     private Roles role;
 
+    @PrePersist
+    protected void onCreate() {
+        if (this.id == null) {
+            this.id = UUID.randomUUID().toString();
+        }
+    }
 }
