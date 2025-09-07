@@ -2,6 +2,7 @@ package food.ordering.backend.service;
 
 import food.ordering.backend.entity.OtpVerification;
 import food.ordering.backend.repository.OtpVerificationRepository;
+import food.ordering.backend.repository.PendingUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +20,7 @@ import java.util.Optional;
 public class OtpService {
     
     private final OtpVerificationRepository otpRepository;
+    private final PendingUserRepository pendingUserRepository;
     private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
     
@@ -32,10 +34,8 @@ public class OtpService {
     
     @Transactional
     public void generateAndSendOtp(String email, String userName) {
-        // Delete any existing OTP for this email
         otpRepository.deleteByEmail(email);
         
-        // Generate new OTP
         String otpCode = generateOtp();
         
         // Create OTP record
@@ -46,7 +46,6 @@ public class OtpService {
         
         otpRepository.save(otp);
         
-        // Send email
         emailService.sendOtpEmail(email, otpCode, userName);
         
         log.info("OTP generated and sent for email: {}", email);
@@ -87,7 +86,6 @@ public class OtpService {
             return false;
         }
         
-        // Mark as verified
         otp.setVerified(true);
         otpRepository.save(otp);
         
@@ -97,7 +95,6 @@ public class OtpService {
             log.info("Welcome email sent to: {}", email);
         } catch (Exception e) {
             log.error("Failed to send welcome email to: {}", email, e);
-            // Don't fail the verification process if welcome email fails
         }
         
         log.info("OTP verified successfully for email: {}", email);
@@ -124,11 +121,13 @@ public class OtpService {
         return otp.toString();
     }
     
-    // Clean up expired OTPs every hour
+    // Clean up expired OTPs and pending users every hour
     @Scheduled(fixedRate = 3600000) // 1 hour
     @Transactional
     public void cleanupExpiredOtps() {
-        otpRepository.deleteExpiredOtps(LocalDateTime.now());
-        log.debug("Cleaned up expired OTPs");
+        LocalDateTime now = LocalDateTime.now();
+        otpRepository.deleteExpiredOtps(now);
+        pendingUserRepository.deleteExpiredPendingUsers(now);
+        log.debug("Cleaned up expired OTPs and pending users");
     }
 }

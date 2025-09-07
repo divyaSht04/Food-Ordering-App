@@ -6,9 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
 @Slf4j
-@Configuration
+// @Configuration // Disabled - now using application-sensitive.yml instead of .env
 public class EnvironmentConfig {
 
+    // This class is no longer needed as we've moved to Spring's native property files
+    // Keeping for reference, but commented out to avoid conflicts
+    
+    /*
     @PostConstruct
     public void loadEnvironmentVariables() {
         try {
@@ -35,4 +39,5 @@ public class EnvironmentConfig {
             log.info("Application will use system environment variables or default values");
         }
     }
+    */
 }
