@@ -4,12 +4,17 @@ import food.ordering.backend.dto.authDTOs.AuthRequest;
 import food.ordering.backend.dto.authDTOs.AuthResponse;
 import food.ordering.backend.dto.authDTOs.LogoutResponse;
 import food.ordering.backend.dto.authDTOs.RegisterRequest;
+import food.ordering.backend.dto.authDTOs.RegisterVerificationRequest;
+import food.ordering.backend.dto.otpDTOs.OtpResponse;
+import food.ordering.backend.entity.PendingUser;
 import food.ordering.backend.entity.RefreshToken;
-import food.ordering.backend.entity.Roles;
 import food.ordering.backend.entity.User;
+import food.ordering.backend.enums.RoleType;
 import food.ordering.backend.exception.JwtTokenException;
-import food.ordering.backend.repository.RoleRepository;
+import food.ordering.backend.repository.PendingUserRepository;
 import food.ordering.backend.repository.UserRepository;
+import food.ordering.backend.service.OtpService;
+import food.ordering.backend.service.TokenBlacklistService;
 import food.ordering.backend.services.interfaces.AuthService;
 import food.ordering.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -34,37 +36,84 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
+    private final PendingUserRepository pendingUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final AuthenticationManager authenticationManager;
-
-    private final Set<String> blacklistedTokens = new HashSet<>();
+    private final TokenBlacklistService tokenBlacklistService;
+    private final OtpService otpService;
 
     @Override
     @Transactional
-    public AuthResponse register(RegisterRequest registerRequest) {
-        log.info("Registering new user with email: {}", registerRequest.getEmail());
+    public OtpResponse initiateRegistration(RegisterRequest registerRequest) {
+        log.info("Initiating registration for user with email: {}", registerRequest.getEmail());
 
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
             throw new RuntimeException("User with email " + registerRequest.getEmail() + " already exists");
         }
 
-        Roles customerRole = roleRepository.findByName(Roles.RoleType.CUSTOMER)
-                .orElseThrow(() -> new RuntimeException("Default role CUSTOMER not found"));
+        // Clean up any existing pending user with same email
+        pendingUserRepository.deleteByEmail(registerRequest.getEmail());
 
+        // Create pending user
+        PendingUser pendingUser = new PendingUser();
+        pendingUser.setEmail(registerRequest.getEmail());
+        pendingUser.setFirstName(registerRequest.getFirstName());
+        pendingUser.setLastName(registerRequest.getLastName());
+        pendingUser.setPhoneNumber(registerRequest.getNumber());
+        pendingUser.setEncryptedPassword(passwordEncoder.encode(registerRequest.getPassword()));
+
+        pendingUserRepository.save(pendingUser);
+        log.info("Pending user created for email: {}", registerRequest.getEmail());
+
+        String fullName = registerRequest.getFirstName() + " " + registerRequest.getLastName();
+        otpService.generateAndSendOtp(registerRequest.getEmail(), fullName);
+
+        return OtpResponse.builder()
+                .success(true)
+                .message("Registration initiated. Please check your email for OTP verification.")
+                .email(registerRequest.getEmail())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse completeRegistration(RegisterVerificationRequest request) {
+        log.info("Completing registration for user with email: {}", request.getEmail());
+
+        // Find pending user
+        Optional<PendingUser> pendingUserOpt = pendingUserRepository.findByEmail(request.getEmail());
+        if (pendingUserOpt.isEmpty()) {
+            throw new RuntimeException("No pending registration found for email: " + request.getEmail());
+        }
+
+        PendingUser pendingUser = pendingUserOpt.get();
+
+        String fullName = pendingUser.getFirstName() + " " + pendingUser.getLastName();
+        boolean isOtpValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode(), fullName);
+        
+        if (!isOtpValid) {
+            throw new RuntimeException("Invalid or expired OTP");
+        }
+
+        // Create actual user
         User newUser = new User();
         newUser.setId(UUID.randomUUID().toString());
-        newUser.setPhoneNumber(registerRequest.getNumber());
-        newUser.setFullName(registerRequest.getFirstName() + " " + registerRequest.getLastName());
-        newUser.setEmail(registerRequest.getEmail());
-        newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        newUser.setRole(customerRole);
+        newUser.setPhoneNumber(pendingUser.getPhoneNumber());
+        newUser.setFullName(fullName);
+        newUser.setEmail(pendingUser.getEmail());
+        newUser.setPassword(pendingUser.getEncryptedPassword());
+        newUser.setRole(RoleType.CUSTOMER);
+        newUser.setPermissions(List.of());
 
         User savedUser = userRepository.save(newUser);
-        log.info("User registered successfully with ID: {}", savedUser.getId());
+        log.info("User registration completed successfully with ID: {}", savedUser.getId());
 
+        // Clean up pending user
+        pendingUserRepository.deleteByEmail(request.getEmail());
+
+        // Generate tokens
         String accessToken = jwtUtil.generateAccessToken(savedUser.getEmail());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser);
 
@@ -72,8 +121,8 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken.getToken())
                 .email(savedUser.getEmail())
-                .firstName(registerRequest.getFirstName())
-                .lastName(registerRequest.getLastName())
+                .firstName(pendingUser.getFirstName())
+                .lastName(pendingUser.getLastName())
                 .build();
     }
 
@@ -97,7 +146,6 @@ public class AuthServiceImpl implements AuthService {
 
                 log.info("User logged in successfully: {}", authRequest.getEmail());
 
-                // Extract first and last name from full name
                 String[] nameParts = user.getFullName().split(" ", 2);
                 String firstName = nameParts.length > 0 ? nameParts[0] : "";
                 String lastName = nameParts.length > 1 ? nameParts[1] : "";
@@ -136,7 +184,7 @@ public class AuthServiceImpl implements AuthService {
                 }
 
                 // Add access token to blacklist
-                blacklistedTokens.add(token);
+                tokenBlacklistService.blacklistToken(token);
 
                 log.info("User logged out successfully: {}", email);
 
@@ -194,11 +242,6 @@ public class AuthServiceImpl implements AuthService {
                             .build();
                 })
                 .orElseThrow(() -> new JwtTokenException("Refresh token not found or invalid"));
-    }
-
-    // Utility method to check if token is blacklisted
-    public boolean isTokenBlacklisted(String token) {
-        return blacklistedTokens.contains(token);
     }
 
 }

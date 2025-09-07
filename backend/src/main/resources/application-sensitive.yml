@@ -1,0 +1,17 @@
+# Sensitive Configuration - Keep this file secure and out of version control
+# Email Configuration
+mail:
+  username: divya.shrestha2004@gmail.com
+  password: rokd ojco psnf mfdm
+
+# System Admin Configuration
+system:
+  admin:
+    email: admin@fooddelivery.com
+    password: admin123
+
+# Database Configuration
+database:
+  username: SamePlace
+  password: 123456
+  url: jdbc:mysql://localhost:3306/SamePlace?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC

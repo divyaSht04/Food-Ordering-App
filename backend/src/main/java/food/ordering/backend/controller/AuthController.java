@@ -13,6 +13,8 @@ import food.ordering.backend.dto.authDTOs.AuthResponse;
 import food.ordering.backend.dto.authDTOs.LogoutResponse;
 import food.ordering.backend.dto.authDTOs.RefreshTokenRequest;
 import food.ordering.backend.dto.authDTOs.RegisterRequest;
+import food.ordering.backend.dto.authDTOs.RegisterVerificationRequest;
+import food.ordering.backend.dto.otpDTOs.OtpResponse;
 import food.ordering.backend.services.interfaces.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,14 +35,26 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    @Operation(summary = "Register a new user", description = "Creates a new user account and returns JWT tokens")
+    @Operation(summary = "Initiate user registration", description = "Starts registration process and sends OTP to email")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User registered successfully"),
+            @ApiResponse(responseCode = "200", description = "OTP sent successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data"),
             @ApiResponse(responseCode = "409", description = "User already exists")
     })
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        AuthResponse response = authService.register(registerRequest);
+    public ResponseEntity<OtpResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        OtpResponse response = authService.initiateRegistration(registerRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping("/register/verify")
+    @Operation(summary = "Complete user registration", description = "Verifies OTP and completes user registration")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid OTP or expired"),
+            @ApiResponse(responseCode = "404", description = "No pending registration found")
+    })
+    public ResponseEntity<AuthResponse> completeRegistration(@Valid @RequestBody RegisterVerificationRequest request) {
+        AuthResponse response = authService.completeRegistration(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 

@@ -1,6 +1,6 @@
 package food.ordering.backend.configuration;
 
-import food.ordering.backend.services.AuthServiceImpl;
+import food.ordering.backend.service.TokenBlacklistService;
 import food.ordering.backend.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -26,7 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserDetailsService userDetailsService;
 
-    private final AuthServiceImpl authService;
+    private final TokenBlacklistService tokenBlacklistService;
 
 
     @Override
@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (jwt != null) {
             try {
-                if (authService.isTokenBlacklisted(jwt)) {
+                if (tokenBlacklistService.isTokenBlacklisted(jwt)) {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.getWriter().write("Token has been invalidated");
                     return;

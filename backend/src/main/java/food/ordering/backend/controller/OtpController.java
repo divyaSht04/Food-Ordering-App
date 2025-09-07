@@ -1,7 +1,11 @@
 package food.ordering.backend.controller;
 
+import food.ordering.backend.dto.otpDTOs.OtpRequest;
+import food.ordering.backend.dto.otpDTOs.OtpResponse;
+import food.ordering.backend.dto.otpDTOs.OtpVerificationRequest;
 import food.ordering.backend.service.EmailService;
 import food.ordering.backend.service.OtpService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -9,112 +13,99 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @Controller
 @RequestMapping("/api/otp")
 @RequiredArgsConstructor
 @Slf4j
 public class OtpController {
-    
+
     private final OtpService otpService;
     private final EmailService emailService;
-    
+
     @PostMapping("/send")
     @ResponseBody
-    public ResponseEntity<?> sendOtp(@RequestBody Map<String, String> request) {
+    public ResponseEntity<OtpResponse> sendOtp(@Valid @RequestBody OtpRequest request) {
         try {
-            String email = request.get("email");
-            String userName = request.get("userName");
-            
-            if (email == null || userName == null) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "Email and userName are required"));
-            }
-            
-            otpService.generateAndSendOtp(email, userName);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "OTP sent successfully to " + email
-            ));
-            
+            otpService.generateAndSendOtp(request.getEmail(), request.getUserName());
+
+            return ResponseEntity.ok(OtpResponse.builder()
+                    .success(true)
+                    .message("OTP sent successfully to " + request.getEmail())
+                    .email(request.getEmail())
+                    .build());
+
         } catch (Exception e) {
             log.error("Error sending OTP", e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("success", false, "message", "Failed to send OTP"));
+                    .body(OtpResponse.builder()
+                            .success(false)
+                            .message("Failed to send OTP")
+                            .build());
         }
     }
-    
+
     @PostMapping("/verify")
     @ResponseBody
-    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
+    public ResponseEntity<OtpResponse> verifyOtp(@Valid @RequestBody OtpVerificationRequest request) {
         try {
-            String email = request.get("email");
-            String otpCode = request.get("otpCode");
-            String userName = request.get("userName");
-            
-            if (email == null || otpCode == null) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "Email and OTP code are required"));
-            }
-            
-            boolean isValid = otpService.verifyOtp(email, otpCode, userName != null ? userName : "User");
-            
+            String userName = request.getUserName() != null ? request.getUserName() : "User";
+            boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode(), userName);
+
             if (isValid) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "OTP verified successfully"
-                ));
+                return ResponseEntity.ok(OtpResponse.builder()
+                        .success(true)
+                        .message("OTP verified successfully")
+                        .email(request.getEmail())
+                        .build());
             } else {
-                int remainingAttempts = otpService.getRemainingAttempts(email);
-                return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Invalid OTP",
-                    "remainingAttempts", remainingAttempts
-                ));
+                int remainingAttempts = otpService.getRemainingAttempts(request.getEmail());
+                return ResponseEntity.badRequest().body(OtpResponse.builder()
+                        .success(false)
+                        .message("Invalid OTP")
+                        .remainingAttempts(remainingAttempts)
+                        .email(request.getEmail())
+                        .build());
             }
-            
+
         } catch (Exception e) {
             log.error("Error verifying OTP", e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("success", false, "message", "Failed to verify OTP"));
+                    .body(OtpResponse.builder()
+                            .success(false)
+                            .message("Failed to verify OTP")
+                            .build());
         }
     }
-    
+
     @GetMapping("/verification-page")
-    public String showOtpVerificationPage(@RequestParam String email, 
-                                         @RequestParam(required = false) String userName,
-                                         Model model) {
+    public String showOtpVerificationPage(@RequestParam String email,
+                                          @RequestParam(required = false) String userName,
+                                          Model model) {
         model.addAttribute("email", email);
         model.addAttribute("userName", userName != null ? userName : "User");
         model.addAttribute("maxAttempts", 3);
         return "otp-verification";
     }
-    
+
     @PostMapping("/resend")
     @ResponseBody
-    public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> request) {
+    public ResponseEntity<OtpResponse> resendOtp(@Valid @RequestBody OtpRequest request) {
         try {
-            String email = request.get("email");
-            String userName = request.get("userName");
-            
-            if (email == null || userName == null) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "Email and userName are required"));
-            }
-            
-            otpService.generateAndSendOtp(email, userName);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "OTP resent successfully"
-            ));
-            
+            otpService.generateAndSendOtp(request.getEmail(), request.getUserName());
+
+            return ResponseEntity.ok(OtpResponse.builder()
+                    .success(true)
+                    .message("OTP resent successfully")
+                    .email(request.getEmail())
+                    .build());
+
         } catch (Exception e) {
             log.error("Error resending OTP", e);
             return ResponseEntity.internalServerError()
-                .body(Map.of("success", false, "message", "Failed to resend OTP"));
+                    .body(OtpResponse.builder()
+                            .success(false)
+                            .message("Failed to resend OTP")
+                            .build());
         }
     }
 }
