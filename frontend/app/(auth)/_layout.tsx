@@ -1,28 +1,22 @@
 import {
-    View,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    Dimensions,
-    ImageBackground, Image
+    StatusBar
 } from 'react-native'
 import React from 'react'
 import {Slot} from "expo-router";
-import {images} from "@/constants";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function _Layout() {
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
-            <ScrollView className="bg-white h-full" keyboardShouldPersistTaps="handled">
-
-                <View className="w-full relative" style={{height: Dimensions.get("screen").height / 2.25}}>
-                    <ImageBackground source={images.loginGraphic} className="size-full rounded-b-lg"
-                                     resizeMode={"stretch"}/>
-                    <Image source={images.logo} className="self-center size-48 absolute -bottom-0 z-16"/>
-                </View>
-
-                <Slot/>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    )
+        <SafeAreaView className="flex-1 bg-white">
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
+                <ScrollView className="bg-white h-full px-5 py-4" keyboardShouldPersistTaps="handled">
+                    <Slot/>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
+    );
 }

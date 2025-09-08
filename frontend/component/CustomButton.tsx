@@ -6,23 +6,43 @@ const CustomButton = ({
     onPress,
     title = "Click Me",
     style,
+    className,
     textStyle,
+    textClassName,
     leftIcon,
-    isLoading = false
-}:CustomButtonProps) => {
+    isLoading = false,
+    disabled = false
+}: CustomButtonProps) => {
     return (
-        <TouchableOpacity className={cn("custom-button", style)} onPress={onPress} >
-            {leftIcon}
-            <View className="flex-center flex-row">
+        <TouchableOpacity 
+            className={cn(
+                "custom-button bg-blue-600 rounded-xl p-4 flex-row items-center justify-center",
+                disabled && "opacity-50",
+                className || style
+            )} 
+            onPress={onPress}
+            disabled={disabled || isLoading}
+            activeOpacity={0.8}
+        >
+            {leftIcon && !isLoading && (
+                <View className="mr-2">
+                    {leftIcon}
+                </View>
+            )}
+            <View className="flex-row items-center justify-center">
                 {isLoading ? (
                     <ActivityIndicator size="small" color="white" />
-                ):
-                    <Text className={cn("text-white-100 paragraph-semibold", textStyle)}>
+                ) : (
+                    <Text className={cn(
+                        "text-white font-semibold text-base",
+                        textClassName || textStyle
+                    )}>
                         {title}
                     </Text>
-                }
+                )}
             </View>
         </TouchableOpacity>
     )
 }
+
 export default CustomButton

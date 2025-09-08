@@ -3,6 +3,7 @@ import "./global.css";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
 
@@ -24,8 +25,10 @@ export default function RootLayout() {
     }
 
     return (
-        <AuthProvider>
-            <Stack screenOptions={{ headerShown: false }} />
-        </AuthProvider>
+        <SafeAreaProvider>
+            <AuthProvider>
+                <Stack screenOptions={{ headerShown: false }} />
+            </AuthProvider>
+        </SafeAreaProvider>
     );
 }

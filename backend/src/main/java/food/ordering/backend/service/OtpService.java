@@ -62,7 +62,6 @@ public class OtpService {
         
         OtpVerification otp = otpOpt.get();
         
-        // Check if OTP is expired
         if (LocalDateTime.now().isAfter(otp.getExpiresAt())) {
             log.warn("OTP expired for email: {}", email);
             otpRepository.delete(otp);
@@ -88,8 +87,7 @@ public class OtpService {
         
         otp.setVerified(true);
         otpRepository.save(otp);
-        
-        // Send welcome email after successful verification
+
         try {
             emailService.sendWelcomeEmail(email, userName);
             log.info("Welcome email sent to: {}", email);
@@ -120,8 +118,7 @@ public class OtpService {
         }
         return otp.toString();
     }
-    
-    // Clean up expired OTPs and pending users every hour
+
     @Scheduled(fixedRate = 3600000) // 1 hour
     @Transactional
     public void cleanupExpiredOtps() {
