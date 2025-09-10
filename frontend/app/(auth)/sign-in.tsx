@@ -42,7 +42,7 @@ const SignIn = () => {
   };
 
   const goToSignUp = () => {
-    router.push('/otp-verification');
+    router.push('/sign-up');
   };
 
   return (

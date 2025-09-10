@@ -71,21 +71,10 @@ const SignUp = () => {
       {/* Form Fields */}
       <View>
         <CustomInput
-          placeholder="Enter your first name"
-          value={registerForm.firstName}
-          onChangeText={(text) => updateRegisterField('firstName', text)}
-          label="First Name"
-          autoCapitalize="words"
-          leftIcon={
-            <Ionicons name="person-outline" size={18} color="#6B7280" />
-          }
-        />
-        
-        <CustomInput
-          placeholder="Enter your last name"
-          value={registerForm.lastName}
-          onChangeText={(text) => updateRegisterField('lastName', text)}
-          label="Last Name"
+          placeholder="Enter your full name"
+          value={registerForm.fullName}
+          onChangeText={(text) => updateRegisterField('fullName', text)}
+          label="Full Name"
           autoCapitalize="words"
           leftIcon={
             <Ionicons name="person-outline" size={18} color="#6B7280" />
@@ -107,8 +96,8 @@ const SignUp = () => {
         
         <CustomInput
           placeholder="Enter your phone number"
-          value={registerForm.number}
-          onChangeText={(text) => updateRegisterField('number', text)}
+          value={registerForm.phoneNumber}
+          onChangeText={(text) => updateRegisterField('phoneNumber', text)}
           label="Phone Number"
           keyboardType="phone-pad"
           leftIcon={

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Alert } from 'react-native';
 import AuthService from '../services/AuthService';
+import { OtpService } from '../services/OtpService';
 import {
   AuthContextType,
   User,
@@ -18,6 +19,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const handleAuthenticationError = async () => {
+    console.log('Authentication error detected, logging out user');
+    setUser(null);
+    setIsAuthenticated(false);
+    await AuthService.clearTokens();
+  };
 
   useEffect(() => {
     checkAuthStatus();
@@ -38,11 +46,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             phoneNumber: '',
           });
         }
+      } else {
+        // If not authenticated, clear user data
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth status check error:', error);
-      setIsAuthenticated(false);
-      setUser(null);
+      // If there's an error checking auth status, assume not authenticated
+      await handleAuthenticationError();
     } finally {
       setIsLoading(false);
     }
@@ -64,29 +75,102 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      Alert.alert('Login Error', errorMessage);
+      // Handle authentication errors
+      if (error instanceof Error && error.name === 'AuthenticationError') {
+        // Token expired or authentication failed
+        await logout();
+        Alert.alert('Session Expired', 'Your session has expired. Please login again.');
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'Login failed';
+        Alert.alert('Login Error', errorMessage);
+      }
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (registerData: RegisterRequest): Promise<void> => {
+  const registerWithOtp = async (registerData: RegisterRequest): Promise<{ message: string; email: string }> => {
     try {
       setIsLoading(true);
-      const response = await AuthService.register(registerData);
+      const response = await AuthService.registerWithOtp(registerData);
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      Alert.alert('Registration Error', errorMessage);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyOtp = async (email: string, otp: string): Promise<void> => {
+    try {
+      setIsLoading(true);
+
+      const validation = OtpService.validateOtpFormat(otp);
+      if (!validation.isValid) {
+        throw new Error(validation.message);
+      }
+
+      const canAttempt = await OtpService.canAttemptVerification(email);
+      if (!canAttempt.canAttempt) {
+        throw new Error(canAttempt.message);
+      }
+
+      const response = await AuthService.verifyOtp(email, otp);
+      
+      // Record successful verification
+      await OtpService.recordSuccessfulVerification(email);
       
       const userData: User = {
         email: response.email,
         fullName: `${response.firstName} ${response.lastName}`.trim(),
         firstName: response.firstName,
         lastName: response.lastName,
-        phoneNumber: registerData.phoneNumber,
+        phoneNumber: '', // Not returned in response
       };
       
       setUser(userData);
       setIsAuthenticated(true);
+    } catch (error) {
+      // Record failed attempt
+      await OtpService.recordFailedAttempt(email);
+      
+      // Handle authentication errors
+      if (error instanceof Error && error.name === 'AuthenticationError') {
+        await handleAuthenticationError();
+        Alert.alert('Session Expired', 'Your session has expired. Please try again.');
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+        Alert.alert('Verification Error', errorMessage);
+      }
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendOtp = async (email: string): Promise<{ message: string }> => {
+    try {
+      const response = await AuthService.resendOtp(email);
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend OTP';
+      Alert.alert('Resend Error', errorMessage);
+      throw error;
+    }
+  };
+
+  const register = async (registerData: RegisterRequest): Promise<void> => {
+    try {
+      setIsLoading(true);
+      
+      const response = await AuthService.registerWithOtp(registerData);
+      
+      // For compatibility, this method doesn't complete the registration
+      // The caller should handle the OTP verification flow
+      throw new Error('Please use registerWithOtp and verifyOtp for complete registration flow');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       Alert.alert('Registration Error', errorMessage);
@@ -104,8 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(false);
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear local state even if logout API fails
-      setUser(null);
+      await handleAuthenticationError();
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -129,6 +212,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     register,
+    registerWithOtp,
+    verifyOtp,
+    resendOtp,
     logout,
     refreshToken,
   };
