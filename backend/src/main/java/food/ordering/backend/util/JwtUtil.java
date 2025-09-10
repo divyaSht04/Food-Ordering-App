@@ -42,7 +42,7 @@ public class JwtUtil {
                     .signWith(getKey())
                     .compact();
         } catch (Exception e) {
-            throw new JwtTokenException("Failed to generate JWT token");
+            throw JwtTokenException.tokenInvalid();
         }
     }
 
@@ -59,9 +59,9 @@ public class JwtUtil {
         try {
             return extractClaim(token, Claims::getSubject);
         } catch (ExpiredJwtException e) {
-            throw new JwtTokenException("JWT token has expired");
+            throw JwtTokenException.tokenExpired();
         } catch (JwtException e) {
-            throw new JwtTokenException("Invalid JWT token");
+            throw JwtTokenException.tokenInvalid();
         }
     }
 
@@ -78,9 +78,9 @@ public class JwtUtil {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (ExpiredJwtException e) {
-            throw new JwtTokenException("JWT token has expired");
+            throw JwtTokenException.tokenExpired();
         } catch (JwtException e) {
-            throw new JwtTokenException("Failed to parse JWT token");
+            throw JwtTokenException.tokenMalformed();
         }
     }
 
@@ -89,9 +89,9 @@ public class JwtUtil {
             final String userName = extractEmail(token);
             return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
         } catch (ExpiredJwtException e) {
-            throw new JwtTokenException("JWT token has expired");
+            throw JwtTokenException.tokenExpired();
         } catch (JwtException e) {
-            throw new JwtTokenException("Invalid JWT token");
+            throw JwtTokenException.tokenInvalid();
         }
     }
 

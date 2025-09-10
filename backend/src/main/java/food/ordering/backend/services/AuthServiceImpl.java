@@ -1,5 +1,6 @@
 package food.ordering.backend.services;
 
+import food.ordering.backend.dto.authDTOs.AdminRegistrationResponse;
 import food.ordering.backend.dto.authDTOs.AuthRequest;
 import food.ordering.backend.dto.authDTOs.AuthResponse;
 import food.ordering.backend.dto.authDTOs.LogoutResponse;
@@ -11,6 +12,7 @@ import food.ordering.backend.entity.RefreshToken;
 import food.ordering.backend.entity.User;
 import food.ordering.backend.enums.RoleType;
 import food.ordering.backend.exception.JwtTokenException;
+import food.ordering.backend.exception.UserException;
 import food.ordering.backend.repository.PendingUserRepository;
 import food.ordering.backend.repository.UserRepository;
 import food.ordering.backend.service.OtpService;
@@ -20,6 +22,7 @@ import food.ordering.backend.services.interfaces.RefreshTokenService;
 import food.ordering.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -51,13 +54,11 @@ public class AuthServiceImpl implements AuthService {
         log.info("Initiating registration for user with email: {}", registerRequest.getEmail());
 
         if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
-            throw new RuntimeException("User with email " + registerRequest.getEmail() + " already exists");
+            throw UserException.userAlreadyExists(registerRequest.getEmail());
         }
 
-        // Clean up any existing pending user with same email
         pendingUserRepository.deleteByEmail(registerRequest.getEmail());
 
-        // Create pending user
         PendingUser pendingUser = new PendingUser();
         pendingUser.setEmail(registerRequest.getEmail());
         pendingUser.setFirstName(registerRequest.getFirstName());
@@ -87,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
         // Find pending user
         Optional<PendingUser> pendingUserOpt = pendingUserRepository.findByEmail(request.getEmail());
         if (pendingUserOpt.isEmpty()) {
-            throw new RuntimeException("No pending registration found for email: " + request.getEmail());
+            throw UserException.userNotFound(request.getEmail());
         }
 
         PendingUser pendingUser = pendingUserOpt.get();
@@ -96,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
         boolean isOtpValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode(), fullName);
         
         if (!isOtpValid) {
-            throw new RuntimeException("Invalid or expired OTP");
+            throw new UserException("Invalid or expired OTP", HttpStatus.BAD_REQUEST, "INVALID_OTP");
         }
 
         User newUser = new User();
@@ -138,7 +139,7 @@ public class AuthServiceImpl implements AuthService {
             );
             if (authentication.isAuthenticated()) {
                 User user = userRepository.findByEmail(authRequest.getEmail())
-                        .orElseThrow(() -> new BadCredentialsException("User not found"));
+                        .orElseThrow(() -> UserException.userNotFound(authRequest.getEmail()));
 
                 String accessToken = jwtUtil.generateAccessToken(user.getEmail());
                 RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
@@ -158,12 +159,12 @@ public class AuthServiceImpl implements AuthService {
                         .build();
             }else {
                 log.error("Authentication failed for user: {}", authRequest.getEmail());
-                throw new BadCredentialsException("Invalid email or password");
+                throw UserException.invalidCredentials();
             }
 
         } catch (AuthenticationException e) {
             log.error("Authentication failed for user: {}", authRequest.getEmail());
-            throw new BadCredentialsException("Invalid email or password");
+            throw UserException.invalidCredentials();
         }
     }
 
@@ -212,14 +213,14 @@ public class AuthServiceImpl implements AuthService {
         log.info("Processing refresh token request");
 
         if (refreshTokenStr == null || refreshTokenStr.trim().isEmpty()) {
-            throw new JwtTokenException("Refresh token is required");
+            throw JwtTokenException.tokenMissing();
         }
 
         return refreshTokenService.findByToken(refreshTokenStr)
                 .map(refreshTokenService::verifyExpiration)
                 .map(refreshToken -> {
                     if (refreshTokenService.isTokenRevoked(refreshToken)) {
-                        throw new JwtTokenException("Refresh token has been revoked");
+                        throw JwtTokenException.refreshTokenRevoked();
                     }
                     User user = refreshToken.getUser();
                     String newAccessToken = jwtUtil.generateAccessToken(user.getEmail());
@@ -240,7 +241,33 @@ public class AuthServiceImpl implements AuthService {
                             .lastName(lastName)
                             .build();
                 })
-                .orElseThrow(() -> new JwtTokenException("Refresh token not found or invalid"));
+                .orElseThrow(() -> JwtTokenException.refreshTokenInvalid());
+    }
+
+    @Override
+    public AdminRegistrationResponse adminRegistration(RegisterRequest registerRequest) {
+        log.info("Attempting admin registration for email: {}", registerRequest.getEmail());
+
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            throw UserException.userAlreadyExists(registerRequest.getEmail());
+        }
+
+        String fullName = registerRequest.getFirstName() + " " + registerRequest.getLastName();
+        
+        User user = User.builder()
+                .id(UUID.randomUUID().toString())
+                .email(registerRequest.getEmail())
+                .fullName(fullName)
+                .phoneNumber(registerRequest.getNumber())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
+                .role(RoleType.ADMIN)
+                .permissions(List.of())
+                .build();
+        
+        User savedUser = userRepository.save(user);
+        log.info("Admin registered successfully with ID: {} and email: {}", savedUser.getId(), savedUser.getEmail());
+        
+        return AdminRegistrationResponse.success(savedUser.getEmail(), savedUser.getFullName());
     }
 
 }

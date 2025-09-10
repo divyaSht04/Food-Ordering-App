@@ -50,7 +50,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(token);
             log.warn("Refresh token expired and deleted: {}", token.getToken());
-            throw new JwtTokenException("Refresh token has expired. Please sign in again.");
+            throw JwtTokenException.refreshTokenExpired();
         }
         return token;
     }
