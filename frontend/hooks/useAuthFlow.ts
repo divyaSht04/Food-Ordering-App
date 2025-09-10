@@ -7,10 +7,7 @@ import {
   RegisterRequest,
 } from '../types/auth';
 import {
-  RegisterInitiateRequest,
-  RegisterVerificationRequest,
   AuthFlowState,
-  OtpResponse,
 } from '../types/otp';
 
 interface UseAuthFlowReturn {
@@ -20,7 +17,7 @@ interface UseAuthFlowReturn {
   
   // Forms
   loginForm: LoginRequest;
-  registerForm: RegisterInitiateRequest;
+  registerForm: RegisterRequest;
   otpCode: string;
   pendingEmail: string;
   pendingUserName: string;
@@ -28,7 +25,7 @@ interface UseAuthFlowReturn {
   
   // Form updates
   updateLoginField: (field: keyof LoginRequest, value: string) => void;
-  updateRegisterField: (field: keyof RegisterInitiateRequest, value: string) => void;
+  updateRegisterField: (field: keyof RegisterRequest, value: string) => void;
   setOtpCode: (code: string) => void;
   
   // Actions
@@ -48,7 +45,7 @@ interface UseAuthFlowReturn {
 }
 
 export const useAuthFlow = (): UseAuthFlowReturn => {
-  const { login } = useAuth();
+  const { login, registerWithOtp, verifyOtp, resendOtp } = useAuth();
   
   const [currentStep, setCurrentStep] = useState<AuthFlowState>(AuthFlowState.SIGN_IN);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,28 +56,25 @@ export const useAuthFlow = (): UseAuthFlowReturn => {
     password: '',
   });
   
-  const [registerForm, setRegisterForm] = useState<RegisterInitiateRequest>({
+  const [registerForm, setRegisterForm] = useState<RegisterRequest>({
     email: '',
     password: '',
-    firstName: '',
-    lastName: '',
-    number: '',
+    fullName: '',
+    phoneNumber: '',
   });
   
   const [otpCode, setOtpCode] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
   const [pendingUserName, setPendingUserName] = useState('');
   
-  // Form field updates
   const updateLoginField = (field: keyof LoginRequest, value: string) => {
     setLoginForm(prev => ({ ...prev, [field]: value }));
   };
   
-  const updateRegisterField = (field: keyof RegisterInitiateRequest, value: string) => {
+  const updateRegisterField = (field: keyof RegisterRequest, value: string) => {
     setRegisterForm(prev => ({ ...prev, [field]: value }));
   };
   
-  // Validation
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -120,13 +114,8 @@ export const useAuthFlow = (): UseAuthFlowReturn => {
   };
   
   const validateRegisterForm = (): boolean => {
-    if (!registerForm.firstName.trim()) {
-      Alert.alert('Validation Error', 'First name is required');
-      return false;
-    }
-    
-    if (!registerForm.lastName.trim()) {
-      Alert.alert('Validation Error', 'Last name is required');
+    if (!registerForm.fullName.trim()) {
+      Alert.alert('Validation Error', 'Full name is required');
       return false;
     }
     
@@ -140,12 +129,12 @@ export const useAuthFlow = (): UseAuthFlowReturn => {
       return false;
     }
     
-    if (!registerForm.number.trim()) {
+    if (!registerForm.phoneNumber.trim()) {
       Alert.alert('Validation Error', 'Phone number is required');
       return false;
     }
     
-    if (!validatePhoneNumber(registerForm.number)) {
+    if (!validatePhoneNumber(registerForm.phoneNumber)) {
       Alert.alert('Validation Error', 'Please enter a valid phone number');
       return false;
     }
@@ -184,20 +173,15 @@ export const useAuthFlow = (): UseAuthFlowReturn => {
     
     setIsLoading(true);
     try {
-      const response: OtpResponse = await OtpService.initiateRegistration(registerForm);
+      const response = await registerWithOtp(registerForm);
       
-      if (response.success) {
-        setPendingEmail(registerForm.email);
-        setPendingUserName(`${registerForm.firstName} ${registerForm.lastName}`);
-        setCurrentStep(AuthFlowState.OTP_VERIFICATION);
-        setRemainingAttempts(3);
-        setOtpCode('');
-        Alert.alert('OTP Sent', response.message);
-        return true;
-      } else {
-        Alert.alert('Registration Failed', response.message);
-        return false;
-      }
+      setPendingEmail(registerForm.email);
+      setPendingUserName(registerForm.fullName);
+      setCurrentStep(AuthFlowState.OTP_VERIFICATION);
+      setRemainingAttempts(3);
+      setOtpCode('');
+      Alert.alert('OTP Sent', response.message);
+      return true;
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'An error occurred during registration');
       return false;
@@ -214,35 +198,18 @@ export const useAuthFlow = (): UseAuthFlowReturn => {
     
     setIsLoading(true);
     try {
-      const verificationRequest: RegisterVerificationRequest = {
-        email: pendingEmail,
-        otpCode: otpCode,
-      };
-      
-      const authResponse = await OtpService.completeRegistration(verificationRequest);
-      
-      try {
-        await login({ email: authResponse.email, password: '' });
-        setCurrentStep(AuthFlowState.SUCCESS);
-        Alert.alert('Success', 'Registration completed successfully!');
-        return true;
-      } catch (loginError) {
-        // If login fails, still consider registration successful
-        setCurrentStep(AuthFlowState.SUCCESS);
-        Alert.alert('Success', 'Registration completed successfully!');
-        return true;
-      }
+      await verifyOtp(pendingEmail, otpCode);
+      setCurrentStep(AuthFlowState.SUCCESS);
+      Alert.alert('Success', 'Registration completed successfully!');
+      return true;
     } catch (error: any) {
       Alert.alert('Verification Failed', error.message || 'Invalid or expired OTP');
       
-      // Update remaining attempts if provided in error response
-      if (error.response?.data?.remainingAttempts !== undefined) {
-        setRemainingAttempts(error.response.data.remainingAttempts);
-      } else {
-        setRemainingAttempts(prev => Math.max(0, prev - 1));
-      }
+      // Get remaining attempts from OtpService
+      const remaining = await OtpService.getRemainingAttempts(pendingEmail);
+      setRemainingAttempts(remaining);
 
-      if (remainingAttempts <= 1) {
+      if (remaining <= 0) {
         Alert.alert(
           'Too Many Attempts',
           'You have exceeded the maximum number of attempts. Please try registering again.',
@@ -259,18 +226,11 @@ export const useAuthFlow = (): UseAuthFlowReturn => {
   const handleResendOtp = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      const response = await OtpService.resendOtp({
-        email: pendingEmail,
-        userName: pendingUserName,
-      });
+      const response = await resendOtp(pendingEmail);
       
-      if (response.success) {
-        setRemainingAttempts(3);
-        setOtpCode('');
-        Alert.alert('OTP Sent', 'A new OTP has been sent to your email');
-      } else {
-        Alert.alert('Resend Failed', response.message);
-      }
+      setRemainingAttempts(3);
+      setOtpCode('');
+      Alert.alert('OTP Sent', 'A new OTP has been sent to your email');
     } catch (error: any) {
       Alert.alert('Resend Failed', error.message || 'Failed to resend OTP');
     } finally {
@@ -299,9 +259,8 @@ export const useAuthFlow = (): UseAuthFlowReturn => {
     setRegisterForm({
       email: '',
       password: '',
-      firstName: '',
-      lastName: '',
-      number: '',
+      fullName: '',
+      phoneNumber: '',
     });
     setOtpCode('');
     setPendingEmail('');

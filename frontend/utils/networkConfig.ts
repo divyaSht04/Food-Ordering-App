@@ -3,16 +3,16 @@ import { Platform } from 'react-native';
 export const NETWORK_CONFIG = {
   DEV: {
     // To find your IP: Run 'ipconfig' (Windows) or 'ifconfig' (Mac/Linux) in terminal
-    COMPUTER_IP: process.env.IP_ADDRESS, // Your actual computer IP address
+    COMPUTER_IP: process.env.EXPO_PUBLIC_IP_ADDRESS || '192.168.1.79', // Your actual computer IP address
 
-    ANDROID_EMULATOR_IP: '10.0.2.2',
-    IOS_SIMULATOR_IP: 'localhost',
+    ANDROID_EMULATOR_IP: process.env.EXPO_PUBLIC_ANDROID_EMULATOR_IP || '10.0.2.2',
+    IOS_SIMULATOR_IP: process.env.EXPO_PUBLIC_IOS_SIMULATOR_IP || 'localhost',
 
-    BACKEND_PORT: '8084',
+    BACKEND_PORT: process.env.EXPO_PUBLIC_BACKEND_PORT || '8084', // Ensure this matches your backend port
   },
 
   PROD: {
-    BASE_URL: 'https://your-production-api.com', // Replace with your production URL
+    BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://your-production-api.com', // Replace with your production URL
   },
 };
 
@@ -24,6 +24,7 @@ export const getApiBaseUrl = (): string => {
       ios: NETWORK_CONFIG.DEV.IOS_SIMULATOR_IP, // Use localhost for iOS simulator
       default: NETWORK_CONFIG.DEV.COMPUTER_IP,
     });
+    console.log("Base IP:", baseIP);
     
     return `http://${baseIP}:${NETWORK_CONFIG.DEV.BACKEND_PORT}/api`;
   }
@@ -55,5 +56,30 @@ export const getNetworkInfo = () => {
     baseUrl,
     isPhysicalDevice: isPhysical,
     isDevelopment: __DEV__,
+    environment: process.env.EXPO_PUBLIC_ENVIRONMENT || 'development',
+    debugMode: process.env.EXPO_PUBLIC_DEBUG_MODE === 'true',
+    configuredIP: process.env.EXPO_PUBLIC_IP_ADDRESS,
+    configuredPort: process.env.EXPO_PUBLIC_BACKEND_PORT,
+  };
+};
+
+// Environment utilities
+export const isDevelopment = (): boolean => {
+  return process.env.EXPO_PUBLIC_ENVIRONMENT === 'development' || __DEV__;
+};
+
+export const isDebugMode = (): boolean => {
+  return process.env.EXPO_PUBLIC_DEBUG_MODE === 'true' || __DEV__;
+};
+
+export const getEnvironmentInfo = () => {
+  return {
+    NODE_ENV: process.env.NODE_ENV,
+    EXPO_PUBLIC_ENVIRONMENT: process.env.EXPO_PUBLIC_ENVIRONMENT,
+    EXPO_PUBLIC_IP_ADDRESS: process.env.EXPO_PUBLIC_IP_ADDRESS,
+    EXPO_PUBLIC_BACKEND_PORT: process.env.EXPO_PUBLIC_BACKEND_PORT,
+    EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
+    EXPO_PUBLIC_DEBUG_MODE: process.env.EXPO_PUBLIC_DEBUG_MODE,
+    __DEV__: __DEV__,
   };
 };

@@ -67,6 +67,7 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refreshToken',
   USER_EMAIL: 'userEmail',
   USER_DATA: 'userData',
+  PENDING_USER_EMAIL: 'pendingUserEmail',
 } as const;
 
 // API Response Wrapper
@@ -83,6 +84,9 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (loginData: LoginRequest) => Promise<void>;
   register: (registerData: RegisterRequest) => Promise<void>;
+  registerWithOtp: (registerData: RegisterRequest) => Promise<{ message: string; email: string }>;
+  verifyOtp: (email: string, otp: string) => Promise<void>;
+  resendOtp: (email: string) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { getNetworkInfo, getApiBaseUrl } from '../utils/networkConfig';
+import { getNetworkInfo, getApiBaseUrl, getEnvironmentInfo } from '../utils/networkConfig';
 import AuthService from '../services/AuthService';
 
 interface NetworkDebugProps {
@@ -9,11 +9,13 @@ interface NetworkDebugProps {
 
 export const NetworkDebugger: React.FC<NetworkDebugProps> = ({ onClose }) => {
   const [networkInfo, setNetworkInfo] = useState(getNetworkInfo());
+  const [environmentInfo, setEnvironmentInfo] = useState(getEnvironmentInfo());
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
     setNetworkInfo(getNetworkInfo());
+    setEnvironmentInfo(getEnvironmentInfo());
   }, []);
 
   const testConnection = async () => {
@@ -21,21 +23,27 @@ export const NetworkDebugger: React.FC<NetworkDebugProps> = ({ onClose }) => {
     setErrorMessage('');
 
     try {
+      // Test basic connectivity first
+      const testUrl = `${getApiBaseUrl()}/auth/health`;
+      console.log('Testing connection to:', testUrl);
+
       // Create a timeout promise
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connection timeout')), 5000)
+        setTimeout(() => reject(new Error('Connection timeout after 10 seconds')), 10000)
       );
 
-      // Try to make a simple request to test connectivity
-      const fetchPromise = fetch(`${getApiBaseUrl()}/auth/test`, {
+      const fetchPromise = fetch(testUrl, {
         method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
 
       if (response.ok) {
         setConnectionStatus('success');
-        Alert.alert('Success', 'Connection to backend successful!');
+        Alert.alert('Success', `Connection to backend successful!\nStatus: ${response.status}\nURL: ${testUrl}`);
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -43,12 +51,12 @@ export const NetworkDebugger: React.FC<NetworkDebugProps> = ({ onClose }) => {
       setConnectionStatus('error');
       const message = error instanceof Error ? error.message : 'Unknown error';
       setErrorMessage(message);
-      Alert.alert('Connection Error', message);
+      console.error('Network test failed:', error);
+      Alert.alert('Connection Error', `Failed to connect to backend:\n${message}\n\nTrying to reach: ${getApiBaseUrl()}`);
     }
   };
 
   const copyToClipboard = (text: string) => {
-    // You can implement clipboard functionality here if needed
     Alert.alert('Info', `${text}`);
   };
 
@@ -61,11 +69,25 @@ export const NetworkDebugger: React.FC<NetworkDebugProps> = ({ onClose }) => {
         <View className="bg-gray-100 p-4 rounded-lg mb-4">
           <Text className="text-lg font-semibold mb-2">Current Configuration:</Text>
           <Text className="mb-1">Platform: {networkInfo.platform}</Text>
-          <Text className="mb-1">Environment: {networkInfo.isDevelopment ? 'Development' : 'Production'}</Text>
+          <Text className="mb-1">Environment: {networkInfo.environment}</Text>
+          <Text className="mb-1">Development Mode: {networkInfo.isDevelopment ? 'Yes' : 'No'}</Text>
+          <Text className="mb-1">Debug Mode: {networkInfo.debugMode ? 'Yes' : 'No'}</Text>
           <Text className="mb-1">Physical Device: {networkInfo.isPhysicalDevice ? 'Yes' : 'No'}</Text>
           <TouchableOpacity onPress={() => copyToClipboard(networkInfo.baseUrl)}>
             <Text className="mb-1 text-blue-600">API Base URL: {networkInfo.baseUrl}</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Environment Variables */}
+        <View className="bg-green-50 p-4 rounded-lg mb-4">
+          <Text className="text-lg font-semibold mb-2">Environment Variables:</Text>
+          <Text className="mb-1">IP Address: {environmentInfo.EXPO_PUBLIC_IP_ADDRESS || 'Not set'}</Text>
+          <Text className="mb-1">Backend Port: {environmentInfo.EXPO_PUBLIC_BACKEND_PORT || 'Not set'}</Text>
+          <Text className="mb-1">API Base URL: {environmentInfo.EXPO_PUBLIC_API_BASE_URL || 'Not set'}</Text>
+          <Text className="mb-1">Environment: {environmentInfo.EXPO_PUBLIC_ENVIRONMENT || 'Not set'}</Text>
+          <Text className="mb-1">Debug Mode: {environmentInfo.EXPO_PUBLIC_DEBUG_MODE || 'Not set'}</Text>
+          <Text className="mb-1">Node ENV: {environmentInfo.NODE_ENV || 'Not set'}</Text>
+          <Text className="mb-1">DEV Flag: {environmentInfo.__DEV__ ? 'true' : 'false'}</Text>
         </View>
 
         {/* Connection Test */}

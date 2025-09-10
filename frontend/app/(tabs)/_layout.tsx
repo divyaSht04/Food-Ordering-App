@@ -2,7 +2,14 @@ import React from "react";
 import { Redirect, Slot, Tabs } from "expo-router";
 import { View, Text, Image } from "react-native";
 import { images } from "@/constants";
+import { useAuth } from "@/contexts/AuthContext";
 import cn from "clsx";
+
+interface TabBarIconProps {
+  focused: boolean;
+  icon: any;
+  title: string;
+}
 
 const TabBarIcon = ({ focused, icon, title }: TabBarIconProps) => (
   <View className="tab-icon">
@@ -21,7 +28,18 @@ const TabBarIcon = ({ focused, icon, title }: TabBarIconProps) => (
 );
 
 export default function _Layout() {
-  const isAuthenticated: boolean = false;
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <Text className="text-lg text-gray-600">Loading...</Text>
+      </View>
+    );
+  }
+  
+  // Redirect to sign-in if not authenticated
   if (!isAuthenticated) return <Redirect href="/sign-in" />;
 
   return (
@@ -57,7 +75,7 @@ export default function _Layout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="search"
         options={{
           title: "Search",
           tabBarIcon: ({ focused }) => (
@@ -66,7 +84,7 @@ export default function _Layout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="cart"
         options={{
           title: "Cart",
           tabBarIcon: ({ focused }) => (
@@ -75,7 +93,7 @@ export default function _Layout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="Profile"
         options={{
           title: "Profile",
           tabBarIcon: ({ focused }) => (

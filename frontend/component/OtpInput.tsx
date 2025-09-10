@@ -124,7 +124,7 @@ const OtpInput: React.FC<OtpInputProps> = ({
         textAlign="center"
         editable={!disabled}
         placeholder={hasValue ? undefined : placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor="#E5E7EB"
         selectTextOnFocus
       />
     );
@@ -142,11 +142,14 @@ const OtpInput: React.FC<OtpInputProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   inputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
   },
   input: {
     borderWidth: 2,

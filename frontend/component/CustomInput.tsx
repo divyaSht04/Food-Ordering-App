@@ -31,7 +31,7 @@ const CustomInput = ({
                 className
             )}>
                 {leftIcon && (
-                    <View className="mr-3 items-center justify-center">
+                    <View className="mr-4 items-center justify-center">
                         {leftIcon}
                     </View>
                 )}
@@ -51,7 +51,7 @@ const CustomInput = ({
                     style={{ lineHeight: 20 }}
                 />
                 {rightIcon && (
-                    <View className="ml-3 items-center justify-center">
+                    <View className="ml-4 items-center justify-center">
                         {rightIcon}
                     </View>
                 )}
