@@ -16,6 +16,7 @@ import food.ordering.backend.repository.UserRepository;
 import food.ordering.backend.service.OtpService;
 import food.ordering.backend.service.TokenBlacklistService;
 import food.ordering.backend.services.interfaces.AuthService;
+import food.ordering.backend.services.interfaces.RefreshTokenService;
 import food.ordering.backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,7 +92,6 @@ public class AuthServiceImpl implements AuthService {
 
         PendingUser pendingUser = pendingUserOpt.get();
 
-        // Verify OTP
         String fullName = pendingUser.getFirstName() + " " + pendingUser.getLastName();
         boolean isOtpValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode(), fullName);
         
@@ -99,7 +99,6 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid or expired OTP");
         }
 
-        // Create actual user
         User newUser = new User();
         newUser.setId(UUID.randomUUID().toString());
         newUser.setPhoneNumber(pendingUser.getPhoneNumber());
@@ -112,10 +111,8 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(newUser);
         log.info("User registration completed successfully with ID: {}", savedUser.getId());
 
-        // Clean up pending user
         pendingUserRepository.deleteByEmail(request.getEmail());
 
-        // Generate tokens
         String accessToken = jwtUtil.generateAccessToken(savedUser.getEmail());
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser);
 

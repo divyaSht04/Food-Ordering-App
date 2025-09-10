@@ -4,6 +4,7 @@ import food.ordering.backend.entity.RefreshToken;
 import food.ordering.backend.entity.User;
 import food.ordering.backend.exception.JwtTokenException;
 import food.ordering.backend.repository.RefreshTokenRepository;
+import food.ordering.backend.services.interfaces.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +19,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RefreshTokenService {
+public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
 

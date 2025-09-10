@@ -28,13 +28,11 @@ public class HasPermissionService {
                 throw new ApiPermissionException("Access Denied. User not authenticated");
             }
 
-            // Super admin has all permissions
             if (currentUser.getRole() == RoleType.SUPERADMIN) {
                 log.debug("Super admin access granted for permission: {}", permission);
                 return true;
             }
 
-            // Check if user has the specific permission
             boolean hasPermission = currentUser.getPermissions().contains(permission);
             
             if (!hasPermission) {
@@ -73,7 +71,7 @@ public class HasPermissionService {
     public void removePermission(String userId, String permission) {
         User currentUser = getCurrentUser();
         
-        // Only super admin or admin with ADMIN_ASSIGN_PERMISSIONS can remove permissions
+        // Only super admin or admin with ADMIN_ASSIGN_PERMISSIONS can 1remove permissions
         if (currentUser.getRole() != RoleType.SUPERADMIN &&
             !currentUser.getPermissions().contains(Permission.ADMIN_ASSIGN_PERMISSIONS)) {
             throw new ApiPermissionException("Access Denied. Cannot remove permissions");
