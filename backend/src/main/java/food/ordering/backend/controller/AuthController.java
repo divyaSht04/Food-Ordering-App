@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import food.ordering.backend.dto.authDTOs.AdminRegistrationResponse;
 import food.ordering.backend.dto.authDTOs.AuthRequest;
 import food.ordering.backend.dto.authDTOs.AuthResponse;
 import food.ordering.backend.dto.authDTOs.LogoutResponse;
@@ -45,6 +46,19 @@ public class AuthController {
         OtpResponse response = authService.initiateRegistration(registerRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping("/register-admin")
+    @Operation(summary = "Register admin user", description = "Creates a new admin user account with admin privileges")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Admin registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "409", description = "Admin user already exists")
+    })
+    public ResponseEntity<AdminRegistrationResponse> registerAdmin(@Valid @RequestBody RegisterRequest registerRequest) {
+        AdminRegistrationResponse response = authService.adminRegistration(registerRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
 
     @PostMapping("/register/verify")
     @Operation(summary = "Complete user registration", description = "Verifies OTP and completes user registration")
