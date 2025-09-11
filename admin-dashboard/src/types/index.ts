@@ -4,12 +4,41 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface SuperAdminLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface SuperAdminLoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface RegisterData {
   fullName: string;
   email: string;
   phone: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface AdminRegisterRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  number: string;
+  password: string;
+}
+
+export interface AdminRegistrationResponse {
+  success: boolean;
+  message: string;
+  adminEmail: string;
+  adminFullName: string;
+  registeredAt: string;
 }
 
 export interface AuthResponse {
