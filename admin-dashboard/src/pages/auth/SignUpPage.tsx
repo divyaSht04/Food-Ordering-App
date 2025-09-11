@@ -7,6 +7,9 @@ import { Mail, Lock, User, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 import CustomInput from '../../components/ui/CustomInput';
 import CustomButton from '../../components/ui/CustomButton';
+import SuccessModal from '../../components/ui/SuccessModal';
+import ErrorModal from '../../components/ui/ErrorModal';
+import { SuperAdminAuthService, type AdminRegisterRequest } from '../../services/auth';
 import { images, icons } from '../../../constants';
 
 const signUpSchema = z.object({
@@ -42,34 +45,64 @@ const SignUpPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
   });
 
   const onSubmit = async (data: SignUpFormData) => {
     setIsLoading(true);
+    setErrorMessage('');
     
     try {
-      // TODO: Implement actual registration logic
-      console.log('Sign up data:', data);
+      // Split full name into first and last name
+      const nameParts = data.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const adminRegisterData: AdminRegisterRequest = {
+        firstName,
+        lastName,
+        email: data.email,
+        number: data.phone,
+        password: data.password,
+      };
+
+      const response = await SuperAdminAuthService.registerAdmin(adminRegisterData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (response.success) {
+        setRegisteredEmail(response.adminEmail);
+        setShowSuccessModal(true);
+        reset(); // Clear the form
+      }
       
-      // TODO: Handle successful registration
-      alert('Account created successfully! (This is a demo)');
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign up error:', error);
-      alert('Registration failed. Please try again.');
+      setErrorMessage(error.message || 'Registration failed. Please try again.');
+      setShowErrorModal(true);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    // Stay on the same page to register more admins
+    // navigate('/dashboard'); // Navigate to super admin dashboard instead
+  };
+
+  const handleErrorModalClose = () => {
+    setShowErrorModal(false);
+    setErrorMessage('');
   };
 
   return (
@@ -91,7 +124,7 @@ const SignUpPage: React.FC = () => {
                 alt="Logo" 
                 className="w-8 h-8 object-contain"
               />
-              <h1 className="text-xl font-quicksand-bold text-gray-900">Dashboard</h1>
+              <h1 className="text-xl font-quicksand-bold text-gray-900">Super Admin Dashboard</h1>
             </div>
           </div>
         </div>
@@ -110,10 +143,10 @@ const SignUpPage: React.FC = () => {
               />
             </div>
             <h1 className="text-4xl font-quicksand-bold text-gray-900 mb-2">
-              Create Account
+              Register New Admin
             </h1>
             <p className="text-gray-600 text-lg font-quicksand-regular">
-              Join the admin team
+              Add a new admin to the team
             </p>
           </div>
 
@@ -215,13 +248,9 @@ const SignUpPage: React.FC = () => {
                   className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label htmlFor="terms" className="ml-2 text-sm text-gray-700 font-quicksand-regular">
-                  I agree to the{' '}
+                  I confirm this admin user will have access to administrative functions and agree to the{' '}
                   <Link to="/terms" className="text-primary-600 hover:text-primary-500 font-quicksand-medium">
                     Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-primary-600 hover:text-primary-500 font-quicksand-medium">
-                    Privacy Policy
                   </Link>
                 </label>
               </div>
@@ -232,21 +261,21 @@ const SignUpPage: React.FC = () => {
                 size="lg"
                 fullWidth
                 isLoading={isLoading}
-                loadingText="Creating account..."
+                loadingText="Registering admin..."
                 className="bg-primary-500 hover:bg-primary-600 text-white font-quicksand-semibold py-4 rounded-xl shadow-soft hover:shadow-medium transition-all duration-200"
               >
-                Create Admin Account
+                Register Admin Account
               </CustomButton>
             </form>
 
             <div className="mt-8 text-center">
               <p className="text-gray-600 font-quicksand-regular">
-                Already have an account?{' '}
+                Need to manage existing admins?{' '}
                 <Link
-                  to="/signin"
+                  to="/dashboard"
                   className="text-primary-600 hover:text-primary-500 font-quicksand-medium transition-colors duration-200"
                 >
-                  Sign in here
+                  Go to Dashboard
                 </Link>
               </p>
             </div>
@@ -260,6 +289,24 @@ const SignUpPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        title="Admin Registered Successfully!"
+        message={`New admin account has been created successfully for ${registeredEmail}. The admin can now sign in to their dashboard with their credentials.`}
+        buttonText="Register Another Admin"
+      />
+
+      {/* Error Modal */}
+      <ErrorModal
+        isOpen={showErrorModal}
+        onClose={handleErrorModalClose}
+        title="Registration Failed"
+        message={errorMessage}
+        buttonText="Try Again"
+      />
     </div>
   );
 };
