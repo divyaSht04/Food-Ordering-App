@@ -1,8 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import SignInPage from './pages/auth/SignInPage';
-import SignUpPage from './pages/auth/SignUpPage';
-import HomePage from './pages/HomePage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { SignInPage, SignUpPage, HomePage, NotFoundPage, UnauthorizedPage } from './pages';
 import './index.css';
 
 const App: React.FC = () => {
@@ -16,9 +14,13 @@ const App: React.FC = () => {
           {/* Auth Routes */}
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/super-admin/signin" element={<SignInPage />} />
           
-          {/* Catch all route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Error Pages */}
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          
+          {/* 404 - Catch all route for undefined paths */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
     </Router>
